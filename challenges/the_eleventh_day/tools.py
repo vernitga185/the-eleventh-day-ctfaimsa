@@ -1,4 +1,5 @@
 from .evaluator import evaluator
+
 import json
 import os
 import re
@@ -32,7 +33,7 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm
             dyn_amender = get_dynamic_amender(session)
             retrieved = set(session.get("story_b_sequence", []))
             
-            from .evaluator import evaluator
+            
             scenario = evaluator.get_story_b_scenario(session)
             
             q = query.lower()
