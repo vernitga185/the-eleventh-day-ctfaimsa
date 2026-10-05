@@ -1,0 +1,68 @@
+story_id: drona_yudhishthira_day11
+display_name: The Eleventh Day
+source:
+  parva: Drona Parva
+  chapter_reference: Sections 11-16
+public_branding:
+  record_name: RECORD XI
+  challenge_title: THE ELEVENTH DAY
+phase1:
+  events:
+  - id: DRONA_COMMAND
+    display: Drona assumes command
+    aliases:
+    - assumes command
+    - drona assumes command
+    - becomes commander
+  - id: DURYODHANA_REQUEST
+    display: Duryodhana requests Yudhishthira's capture
+    aliases:
+    - capture yudhishthira
+    - capture him alive
+    - capture alive
+  - id: DRONA_CONDITION
+    display: Drona explains Arjuna protects him
+    aliases:
+    - arjuna protects him
+    - while arjuna protects
+    - cannot be captured
+  - id: DRONA_STRATEGY
+    display: Drona proposes to draw Arjuna away
+    aliases:
+    - draw arjuna away
+    - distract arjuna
+    - pull arjuna away
+  - id: YUDHISHTHIRA_LEARNS
+    display: Yudhishthira learns of the plan
+    aliases:
+    - learns of the plan
+    - hears the plan
+    - discovers the plot
+  - id: YUDHISHTHIRA_ASKS
+    display: Yudhishthira asks Arjuna for protection
+    aliases:
+    - asks arjuna to protect him
+    - asks for protection
+phase2:
+  events:
+  - id: ARJUNA_ASSURES
+    display: Arjuna assures protection
+    aliases:
+    - arjuna assures
+    - assures protection
+    - gives assurance
+  - id: DRONA_ATTACKS
+    display: Drona attacks
+    aliases:
+    - drona attacks
+    - penetrates toward yudhishthira
+    - advances
+  - id: ARJUNA_INTERVENES
+    display: Arjuna intervenes
+    aliases:
+    - arjuna intervenes
+    - prevents drona
+    - stops drona
+flexible: []
+rules:
+  one_action_per_turn: true

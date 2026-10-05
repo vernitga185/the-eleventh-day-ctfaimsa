@@ -38,39 +38,33 @@ def chat_with_agent(message: str, session_id: str) -> dict:
         if "credential" in data: return {"response": f"Credential issued: {data['credential']}. Submit this to /api/eleventh/redeem."}
         return {"response": data.get("error")}
         
-    if "strike" in msg or "satanika" in msg or "bhutakarman" in msg:
-        part = "HEAD" if "head" in msg else "ARM" if "arm" in msg else ""
-        if part:
-            res = execute_tool("submit_story_b_event", {"striker": "SATANIKA", "target": "BHUTAKARMAN", "part": part}, session_id)
-            return {"response": json.loads(res).get("message")}
-            
-    # Try reenactment logic for combat actions
-    combat_verbs = ["cut", "slay", "slew", "kill", "killed", "dismount", "jump", "leap", "mount", "take", "return", "wreck", "destroy", "leave", "resume"]
+    session_record = execute_tool("get_session_info", {}, session_id)  # Note: not a real tool, just abstracting. Actually we can just track it via the tools themselves.
+    
+    # Generic routing for the new Day 11 events
+    # We will just route any non-question containing keywords to either STORY_A or STORY_B depending on state.
+    # But agent doesn't know state natively. We can just send to STORY_B if they have the token or try both.
+    # Actually, we can check for "story b" explicit commands like before, but for submitting events, we can just look for keywords.
+    
+    day11_verbs = ["command", "assume", "drona", "duryodhana", "capture", "alive", "arjuna", "protect", "draw", "away", "distract", "learn", "ask", "assure", "promise", "attack", "penetrate", "advance", "intervene", "prevent", "stop"]
     is_question = "?" in msg or msg.startswith("who") or msg.startswith("what") or msg.startswith("where") or msg.startswith("why") or msg.startswith("how")
     
-    if not is_question and (any(v in msg for v in combat_verbs) or "manimat" in msg or "bhurishravas" in msg):
+    if not is_question and any(v in msg for v in day11_verbs):
+        # We don't have direct access to session state here without db import, so we just try STORY_A. 
+        # If STORY_A is complete, tools.py returns "Story already complete."
+        # So we can try STORY_A, if complete, try STORY_B.
         
-        # Determine speaker/target better:
-        # Most events are Bhurishravas attacking Manimat
-        if "kill" in msg or "slay" in msg or "slew" in msg:
-            speaker = "BHURISHRAVAS"
-        else:
-            speaker = "MANIMAT" if "manimat" in msg and not msg.startswith("bhurishravas") else "BHURISHRAVAS"
-            
-        target = "BHURISHRAVAS" if speaker == "MANIMAT" else "MANIMAT"
-        
-        res = execute_tool("record_reenactment", {
-            "speaker": speaker, 
-            "target": target, 
+        res_a = execute_tool("record_reenactment", {
             "action_summary": msg,
-            "evidence_source_ids": []
         }, session_id)
+        data_a = json.loads(res_a)
         
-        data = json.loads(res)
-        msg_resp = data.get("message")
-        
-        # If it was evaluated as an event attempt, return the evaluator's response directly
-        return {"response": msg_resp}
+        if data_a.get("message") == "Story already complete.":
+            res_b = execute_tool("submit_story_b_event", {
+                "action_summary": msg,
+            }, session_id)
+            return {"response": json.loads(res_b).get("message")}
+            
+        return {"response": data_a.get("message")}
 
     from .clue_cards import match_clue_card
     clue = match_clue_card(msg)

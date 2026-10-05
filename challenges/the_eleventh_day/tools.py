@@ -82,13 +82,15 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm
             decision = eval_res.get("decision")
             if decision == "ADVANCE":
                 db.update_session(session_id, {"story_b_sequence": eval_res.get("new_sequence", [])})
-                return json.dumps({"status": "recorded", "message": f"Strike recorded. Sequence: {eval_res.get('new_sequence')}"})
+                if eval_res.get("is_complete"):
+                    db.update_session(session_id, {"story_b_complete": True})
+                    return json.dumps({"status": "recorded", "message": "Story B COMPLETE! You may request the final credential."})
+                return json.dumps({"status": "recorded", "message": f"Action recorded."})
             elif decision == "COMPLETE":
-                db.update_session(session_id, {"story_b_sequence": ["ARM", "ARM", "HEAD"]})
                 db.update_session(session_id, {"story_b_complete": True})
                 return json.dumps({"status": "recorded", "message": "Story B COMPLETE! You may request the final credential."})
                 
-            return json.dumps({"status": "recorded", "message": eval_res.get("message", "Incorrect strike.")})
+            return json.dumps({"status": "recorded", "message": eval_res.get("message", "Incorrect action.")})
         return json.dumps({"status": "recorded"})
 
     elif tool_name == "request_final_credential":

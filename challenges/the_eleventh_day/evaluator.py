@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class DeterministicEvaluator:
     def __init__(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        yaml_path = os.path.join(current_dir, "stories", "manimat.yaml")
+        yaml_path = os.path.join(current_dir, "stories", "day11.yaml")
         with open(yaml_path, 'r', encoding='utf-8') as f:
             self.story_def = yaml.safe_load(f)
             
@@ -20,7 +20,6 @@ class DeterministicEvaluator:
     def check_bundled_actions(self, action_summary: str, event_list: list) -> bool:
         summary_lower = action_summary.lower().strip()
         
-        # If the summary is an exact match for one alias, it is not bundled.
         for ev in event_list:
             if any(alias.lower() == summary_lower for alias in ev.get("aliases", [])):
                 return False
@@ -43,7 +42,7 @@ class DeterministicEvaluator:
         
         if milestone == "STORY_A":
             current_index = session_state.get("story_a_index", 0)
-            all_events = self.phase1_events + self.phase2_events
+            all_events = self.phase1_events
             
             if current_index >= len(all_events):
                 return {"decision": "COMPLETE"}
@@ -56,15 +55,6 @@ class DeterministicEvaluator:
             matched = False
             if any(alias.lower() in summary_lower for alias in expected_event.get("aliases", [])):
                 matched = True
-                
-            if not matched:
-                for flex_group in self.flexible:
-                    if expected_event["id"] in flex_group:
-                        for flex_id in flex_group:
-                            flex_ev = next((e for e in all_events if e["id"] == flex_id), None)
-                            if flex_ev and any(a.lower() in summary_lower for a in flex_ev.get("aliases", [])):
-                                matched = True
-                                break
                                 
             if matched:
                 return {"decision": "ADVANCE", "new_index": current_index + 1, "is_complete": (current_index + 1) >= len(all_events)}
@@ -72,26 +62,28 @@ class DeterministicEvaluator:
                 return {"decision": "NOT_COMPLETE", "message": "Incorrect or out of order event."}
                 
         elif milestone == "STORY_B":
-            striker = args.get("striker")
-            target = args.get("target")
-            part = args.get("part")
+            current_index = len(session_state.get("story_b_sequence", []))
+            all_events = self.phase2_events
             
-            if striker != "SATANIKA" or target != "BHUTAKARMAN":
-                return {"decision": "NOT_COMPLETE"}
-                
-            current_sequence = session_state.get("story_b_sequence", [])
-            expected_sequence = ["ARM", "ARM", "HEAD"]
-            
-            new_sequence = current_sequence + [part]
-            for i, p in enumerate(new_sequence):
-                if expected_sequence[i] != p:
-                    return {"decision": "NOT_COMPLETE", "message": "Incorrect sequence."}
-                    
-            if len(new_sequence) == len(expected_sequence):
+            if current_index >= len(all_events):
                 return {"decision": "COMPLETE"}
+                
+            if self.check_bundled_actions(summary_lower, all_events):
+                return {"decision": "NOT_COMPLETE", "message": "Bundled actions rejected. One action per turn."}
+                
+            expected_event = all_events[current_index]
+            
+            matched = False
+            if any(alias.lower() in summary_lower for alias in expected_event.get("aliases", [])):
+                matched = True
+                                
+            if matched:
+                new_sequence = session_state.get("story_b_sequence", []) + [expected_event["id"]]
+                return {"decision": "ADVANCE", "new_sequence": new_sequence, "is_complete": len(new_sequence) >= len(all_events)}
             else:
-                return {"decision": "ADVANCE", "new_sequence": new_sequence}
+                return {"decision": "NOT_COMPLETE", "message": "Incorrect or out of order event."}
 
         return {"decision": "UNCERTAIN"}
 
 evaluator = DeterministicEvaluator()
+
