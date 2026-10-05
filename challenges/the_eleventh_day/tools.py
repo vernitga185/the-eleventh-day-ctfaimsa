@@ -8,13 +8,34 @@ from .rag import rag_service
 from .evaluator import evaluator
 from . import db
 
+def get_dynamic_amender(session) -> str:
+    if not session: return "field_scribe"
+    seed = session.get("internal_seed", "default")
+    import hashlib
+    amenders = ["field_scribe", "royal_chronicler", "drona_adjutant", "chariot_observer"]
+    idx = int(hashlib.md5(seed.encode()).hexdigest(), 16) % len(amenders)
+    return amenders[idx]
+
 def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm=None) -> str:
     db.record_tool_call(session_id, tool_name, json.dumps(arguments), "pending")
     
     if tool_name == "search_archive":
         query = arguments.get("query", "")
         top_k = arguments.get("top_k", 6)
-        docs = rag_service.search(query, top_k=top_k)
+        
+        # Copy docs so we don't modify the global corpus
+        docs = [d.copy() for d in rag_service.search(query, top_k=top_k)]
+        
+        session = db.get_session(session_id)
+        if session:
+            dyn_amender = get_dynamic_amender(session)
+            retrieved = set(session.get("story_b_sequence", []))
+            for d in docs:
+                retrieved.add(d.get("source_id"))
+                if "field_scribe" in d.get("text", ""):
+                    d["text"] = d["text"].replace("field_scribe", dyn_amender)
+            db.update_session(session_id, {"story_b_sequence": list(retrieved)})
+            
         return json.dumps({"results": docs})
     
     elif tool_name == "open_source":
@@ -93,9 +114,43 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm
             return json.dumps({"status": "recorded", "message": eval_res.get("message", "Incorrect action.")})
         return json.dumps({"status": "recorded"})
 
+    elif tool_name == "submit_correction":
+        session = db.get_session(session_id)
+        if session and session.get("first_story_complete") and not session.get("story_b_unlocked"):
+            claim = arguments.get("claim", "").lower()
+            amender = arguments.get("amender", "").lower().strip()
+            
+            dyn_amender = get_dynamic_amender(session)
+            is_valid = ("not captured" in claim or "failed" in claim) and "yudhishthira" in claim
+            if is_valid and amender == dyn_amender:
+                db.update_session(session_id, {"story_b_unlocked": True})
+                return json.dumps({"status": "success", "message": "Archive correction accepted."})
+            
+            return json.dumps({"error": "Correction rejected or provenance invalid."})
+        return json.dumps({"error": "Phase not active."})
+
+    elif tool_name == "submit_conclusion":
+        session = db.get_session(session_id)
+        if session and session.get("story_b_unlocked") and not session.get("story_b_complete"):
+            claim = arguments.get("claim", "").lower()
+            concepts = ["duryodhana", "drona", "arjuna", "yudhishthira", "capture"]
+            has_concepts = all(c in claim for c in concepts)
+            
+            # Using story_b_sequence to store retrieved sources since it's a JSON/Array column
+            retrieved = session.get("story_b_sequence", [])
+            required_sources = ["P3_03", "P3_01", "P3_04"] 
+            has_sources = all(s in retrieved for s in required_sources)
+            
+            if has_concepts and has_sources:
+                db.update_session(session_id, {"story_b_complete": True})
+                return json.dumps({"status": "success", "message": "Final archive authorization available."})
+                
+            return json.dumps({"error": "Conclusion rejected. Insufficient evidence or missing concepts."})
+        return json.dumps({"error": "Phase not active."})
+
     elif tool_name == "request_final_credential":
         session = db.get_session(session_id)
-        if session and session.get("story_b_complete"):
+        if session and session.get("first_story_complete") and session.get("story_b_unlocked") and session.get("story_b_complete"):
             final_key = f"FINAL_{session_id.replace('-', '')[:16].upper()}"
             db.save_artifact(session_id, "CREDENTIAL", "FINAL_CRED", final_key)
             return json.dumps({
