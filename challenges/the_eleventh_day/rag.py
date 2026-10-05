@@ -7,11 +7,11 @@ STOP_WORDS = {"is", "the", "a", "an", "what", "this", "of", "and", "to", "in", "
 class RAGService:
     def __init__(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(os.path.dirname(current_dir))
-        self.raw_path = os.path.join(project_root, "challenges", "satyajit", "data", "drona_11_authentic.jsonl")
+        
+        lore_path = os.path.join(current_dir, "data", "drona_11_lore.jsonl")
         self.corpus = []
-        if os.path.exists(self.raw_path):
-            with open(self.raw_path, 'r', encoding='utf-8') as f:
+        if os.path.exists(lore_path):
+            with open(lore_path, 'r', encoding='utf-8') as f:
                 for line in f:
                     if line.strip():
                         self.corpus.append(json.loads(line))
