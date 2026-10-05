@@ -1,5 +1,6 @@
 import json
 import re
+import random
 from .tools import execute_tool
 
 def chat_with_agent(message: str, session_id: str) -> dict:
@@ -14,23 +15,20 @@ def chat_with_agent(message: str, session_id: str) -> dict:
         if docs: return {"response": "Archive matches:\n\n" + "\n\n".join([f"[{d.get('source_id')}] {d.get('text')}" for d in docs])}
         return {"response": "Archive silence."}
         
-    if msg.startswith("open") and not "story b" in msg:
-        source_id = msg.replace("open source", "").replace("open", "").strip().upper()
-        res = execute_tool("open_source", {"source_id": source_id}, session_id)
-        doc = json.loads(res)
-        if doc and "text" in doc: return {"response": f"[{doc.get('source_id')}] {doc.get('text')}"}
-        
-    if "plate" in msg and ("get" in msg or "request" in msg or "give" in msg):
-        res = execute_tool("request_plate", {}, session_id)
+    if "correction" in msg or "amendment" in msg:
+        # Expected format "correction: [claim] (amender: field_scribe)"
+        claim = msg
+        amender = "Unknown"
+        if "amender:" in msg:
+            amender = msg.split("amender:")[-1].strip().strip(")")
+        res = execute_tool("submit_correction", {"claim": claim, "amender": amender}, session_id)
         data = json.loads(res)
-        if "plate_token" in data: return {"response": f"{data.get('message')} Token: {data['plate_token']}"}
-        return {"response": data.get("error") or data.get("message")}
+        return {"response": data.get("message") or data.get("error")}
         
-    if "story b" in msg or "story_b_" in msg:
-        match = re.search(r"story_b_[a-f0-9]+", msg)
-        token = match.group(0).upper() if match else msg.split()[-1].upper()
-        res = execute_tool("unlock_story_b", {"plate_token": token}, session_id)
-        return {"response": json.loads(res).get("status") or json.loads(res).get("error")}
+    if "conclusion" in msg:
+        res = execute_tool("submit_conclusion", {"claim": msg}, session_id)
+        data = json.loads(res)
+        return {"response": data.get("message") or data.get("error")}
         
     if "credential" in msg and ("request" in msg or "get" in msg or "final" in msg):
         res = execute_tool("request_final_credential", {}, session_id)
@@ -76,4 +74,46 @@ def chat_with_agent(message: str, session_id: str) -> dict:
     if docs:
         return {"response": "Based on the records:\n\n" + "\n\n".join([f"[{d.get('source_id')}] {d.get('text')}" for d in docs])}
     
-    return {"response": "The archives are listening."}
+    fallback_responses = [
+        "The archives are listening, friend. How can I help?",
+        "I'm here! Let me know if you need to search the records.",
+        "The dust of Kurukshetra settles, but I am still here to assist.",
+        "What else would you like to uncover today?",
+        "I didn't quite catch that. Could you rephrase for the records?",
+        "The scrolls are open. What are you looking for?",
+        "Just let me know if you need me to pull another dispatch!",
+        "I'm happy to help you piece this battlefield together.",
+        "Still here! The archive awaits your next query.",
+        "That one isn't in the immediate records. Try another angle?",
+        "Hmm, I might need a bit more context to find that in the ledger.",
+        "Take your time. The archive isn't going anywhere.",
+        "I'm ready when you are!",
+        "Let's keep digging. What's next on your mind?",
+        "Every detail matters. What should we look at next?",
+        "I'm all ears—or rather, all pages!",
+        "The battlefield is chaotic, but I'm here to help make sense of it.",
+        "Need a hint? Try asking about a specific commander or formation.",
+        "I'm here to help you navigate the chaos of the eleventh day.",
+        "The scribes are standing by for your next query.",
+        "Not quite sure I follow, but I'm eager to help!",
+        "Let's unravel this mystery together.",
+        "The ink is still fresh on some of these reports. What do you need?",
+        "I'm your trusty guide through these ancient records.",
+        "That doesn't match my current scrolls. Want to try searching for a name?",
+        "I'm always happy to chat, but I'm best at finding battlefield reports!",
+        "A fascinating thought! But maybe we should check the ledgers?",
+        "I'm right here with you, exploring the shadows of Kurukshetra.",
+        "The archive is vast. Sometimes it takes a few tries to find the right scroll.",
+        "I'm listening! What's our next move?",
+        "I couldn't find a direct match, but don't let that stop you.",
+        "The history of this day is complex. Let's keep looking!",
+        "I'm here to assist you, brave investigator.",
+        "Got it! Well, not exactly, but I'm ready for your next question.",
+        "The records can be cryptic. Let me know if you want to try a different search.",
+        "I'm standing by, ready to dust off more scrolls for you.",
+        "Let's see what else the field dispatches have to say.",
+        "I'm always happy to help you read between the lines.",
+        "That's a new one for the archives! What else is on your mind?",
+        "I'm here, keeping the lanterns lit while you investigate."
+    ]
+    return {"response": random.choice(fallback_responses)}
