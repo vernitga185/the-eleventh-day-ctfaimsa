@@ -6,7 +6,6 @@ from .tools import execute_tool
 def chat_with_agent(message: str, session_id: str) -> dict:
     msg = message.lower().strip()
     
-    # Explicit commands
     if msg.startswith("search"):
         query = msg.replace("search for", "").replace("search", "").strip()
         if not query: return {"response": "Search for what?"}
@@ -33,13 +32,11 @@ def chat_with_agent(message: str, session_id: str) -> dict:
         if "credential" in data: return {"response": f"Credential issued: {data['credential']}. Submit this to /api/eleventh/redeem."}
         return {"response": data.get("error")}
         
-    # Try terminal command first
     term_res = execute_tool("terminal_command", {"command": message}, session_id)
     term_data = json.loads(term_res)
     if "output" in term_data:
         return {"response": term_data["output"]}
         
-    # Generic routing for Phase 1 events
     day11_verbs = ["command", "assume", "drona", "duryodhana", "capture", "alive", "arjuna", "protect", "draw", "away", "distract", "learn", "ask", "assure", "promise", "attack", "penetrate", "advance", "intervene", "prevent", "stop"]
     is_question = "?" in msg or msg.startswith("who") or msg.startswith("what") or msg.startswith("where") or msg.startswith("why") or msg.startswith("how")
     
@@ -50,7 +47,6 @@ def chat_with_agent(message: str, session_id: str) -> dict:
         data_a = json.loads(res_a)
         return {"response": data_a.get("message", "Story already complete.")}
 
-    # Generic RAG fallback for conversational input
     docs = json.loads(execute_tool("search_archive", {"query": msg, "top_k": 2}, session_id)).get("results", [])
     if docs:
         return {"response": "Based on the records:\n\n" + "\n\n".join([f"[{d.get('source_id')}] {d.get('text')}" for d in docs])}

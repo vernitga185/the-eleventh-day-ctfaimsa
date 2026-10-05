@@ -26,22 +26,11 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm
         query = arguments.get("query", "")
         top_k = arguments.get("top_k", 6)
         
-        # Copy docs so we don't modify the global corpus
         docs = [d.copy() for d in rag_service.search(query, top_k=top_k)]
         
         session = db.get_session(session_id)
         if session:
             dyn_amender = get_dynamic_amender(session)
-            
-            scenario = evaluator.get_story_b_scenario(session)
-            
-            q = query.lower()
-            for doc in scenario["docs"]:
-                if any(t.lower() in q for t in doc["triggers"]):
-                    docs.append({
-                        "source_id": doc["source_id"],
-                        "text": doc["text"]
-                    })
                     
             for d in docs:
                 if "field_scribe" in d.get("text", ""):
@@ -283,7 +272,6 @@ KURU-CMD>"""
             concepts = ["duryodhana", "drona", "arjuna", "yudhishthira", "capture"]
             has_concepts = all(c in claim for c in concepts)
             
-            # Using story_b_sequence to store retrieved sources since it's a JSON/Array column
             retrieved = session.get("story_b_sequence", [])
             required_sources = ["P3_03", "P3_01", "P3_04"] 
             has_sources = all(s in retrieved for s in required_sources)

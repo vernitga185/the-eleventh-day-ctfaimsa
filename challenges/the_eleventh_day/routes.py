@@ -38,7 +38,6 @@ async def chat(req: ChatRequest):
 
 @router.post("/redeem")
 async def redeem(req: RedeemRequest):
-    # In a full challenge this decrypts the credential with crypto_utils
     if req.credential.startswith("CRED-"):
         from shared.config import settings
         return {"flag": settings.FINAL_FLAG}

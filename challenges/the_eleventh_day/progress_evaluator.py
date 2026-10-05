@@ -57,7 +57,6 @@ class SemanticEvaluator:
             logger.warning("Model not provided to evaluator. Mocking UNCERTAIN.")
             return {"decision": "UNCERTAIN", "covered_events": [], "evidence_source_ids": [], "confidence": 0.0}
 
-        # Format the context
         trace_json = json.dumps(tool_trace, indent=2)
         passages_json = json.dumps(retrieved_passages, indent=2)
         convo_json = json.dumps(recent_conversation, indent=2)
@@ -77,7 +76,6 @@ Recent Conversation:
 """
         
         try:
-            # llama-cpp-python create_chat_completion
             response = llm.create_chat_completion(
                 messages=[
                     {"role": "system", "content": EVALUATOR_INSTRUCTIONS},

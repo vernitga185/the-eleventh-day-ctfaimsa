@@ -7,9 +7,7 @@ from argon2.low_level import hash_secret_raw, Type
 import unicodedata
 
 def normalize_verse(verse: str) -> str:
-    # NFC, remove extra spaces, trim
     verse = unicodedata.normalize('NFC', verse)
-    # naive space collapse
     verse = ' '.join(verse.split())
     return verse.strip()
 
@@ -17,10 +15,8 @@ def derive_plate_key(verse_a: str, verse_b: str, digest: str, salt: bytes) -> by
     norm_a = normalize_verse(verse_a)
     norm_b = normalize_verse(verse_b)
     
-    # Input: verse_A_norm || verse_B_norm || transcript_digest || salt
     key_material = norm_a.encode('utf-8') + norm_b.encode('utf-8') + digest.encode('utf-8') + salt
     
-    # Argon2id: time_cost=3, memory_cost=65536 KiB, parallelism=1, output=32 bytes
     return hash_secret_raw(
         secret=key_material,
         salt=salt,

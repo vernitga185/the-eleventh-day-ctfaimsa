@@ -22,7 +22,6 @@ class RAGService:
         query_clean = query_lower.translate(str.maketrans("", "", string.punctuation))
         query_words = set(w for w in query_clean.split() if w not in STOP_WORDS)
         for doc in self.corpus:
-            # Skip procedural rules intended for Satyajit
             if doc.get("episode") == "RULES":
                 continue
             text_clean = doc["text"].lower().translate(str.maketrans("", "", string.punctuation))

@@ -5,7 +5,6 @@ import glob
 from datetime import datetime, timezone
 import sys
 
-# Add parent dir to path so we can import backend.rag
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.rag import rag_service
 from backend.config import settings
@@ -23,7 +22,6 @@ def compute_file_hash(filepath: str) -> str:
 def ingest_corpus():
     print(f"Starting corpus ingestion from {RAW_DIR}...")
     
-    # Read pre-chunked .jsonl source texts from rag/raw/
     raw_files = glob.glob(os.path.join(RAW_DIR, "*.jsonl"))
     
     total_chunks = 0
@@ -43,7 +41,6 @@ def ingest_corpus():
                     source_id = chunk.pop("source_id")
                     text = chunk.pop("text")
                     
-                    # chunk dict now contains only metadata (parva, chapter, verse_start, verse_end, episode, language)
                     rag_service.ingest_chunk(source_id=source_id, text=text, metadata=chunk)
                     total_chunks += 1
                 except Exception as e:
@@ -51,7 +48,6 @@ def ingest_corpus():
                     
     print(f"Ingested {total_chunks} chunks into Supabase pgvector.")
 
-    # Write manifest
     manifest = {
         "build_timestamp": datetime.now(timezone.utc).isoformat(),
         "corpus_version": "1.0",
