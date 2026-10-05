@@ -30,35 +30,78 @@ class DeterministicEvaluator:
                 matches += 1
         return matches > 1
         
-    def get_dynamic_story_b_sequence(self, session_state: dict) -> list:
+    def get_story_b_scenario(self, session_state: dict) -> dict:
         import hashlib
-        seed = session_state.get("internal_seed", "default")
-        h = int(hashlib.md5(seed.encode()).hexdigest(), 16)
+        seed = session_state.get("internal_seed", "default_seed")
+        hash_val = int(hashlib.md5(seed.encode()).hexdigest(), 16)
         
-        aggressors = ["satanika", "dhrishtadyumna", "shikhandi", "yudhamanyu"]
-        targets = ["bhutakarman", "ashwatthama", "kritavarma", "kripacharya"]
-        seqs = [
-            ["bow", "arm", "head"],
-            ["arm", "arm", "head"],
-            ["standard", "bow", "neck"],
-            ["chariot", "arm", "chest"]
+        scenarios = [
+            {
+                "aggressor": "Satanika",
+                "target": "Ashwatthama",
+                "sequence": [
+                    {"aliases": ["satanika cut the standard", "cut the standard", "strike standard", "satanika strike ashwatthama standard"]},
+                    {"aliases": ["satanika strike the chariot", "strike chariot", "strike the chariot", "satanika strike ashwatthama chariot"]},
+                    {"aliases": ["satanika strike the neck", "strike neck", "strike the neck", "satanika strike ashwatthama neck"]}
+                ],
+                "docs": [
+                    {"source_id": "DYN_REPORT_A1", "triggers": ["satanika", "ashwatthama", "skirmish"], "text": "[DISPATCH] A brutal skirmish broke out on the southern flank between Satanika and Ashwatthama."},
+                    {"source_id": "DYN_OBS_A2", "triggers": ["ashwatthama", "standard", "chariot", "strike"], "text": "[WITNESS_ACCOUNT] I saw Satanika's first strike shatter the standard. Shortly after, the chariot itself took a heavy blow."},
+                    {"source_id": "DYN_MED_A3", "triggers": ["satanika", "neck", "strike", "final"], "text": "[MEDIC_REPORT] The final decisive blow landed squarely on the neck."},
+                    {"source_id": "DYN_DEC_A4", "triggers": ["chariot", "standard", "first"], "text": "[RUMOR] Some say the chariot was struck first, but they were not at the front lines."}
+                ]
+            },
+            {
+                "aggressor": "Shikhandi",
+                "target": "Bhutakarman",
+                "sequence": [
+                    {"aliases": ["shikhandi cut the bow", "cut the bow", "strike bow", "shikhandi strike bhutakarman bow"]},
+                    {"aliases": ["shikhandi strike the arm", "strike arm", "strike the arm", "shikhandi strike bhutakarman arm"]},
+                    {"aliases": ["shikhandi strike the head", "strike head", "strike the head", "shikhandi strike bhutakarman head"]}
+                ],
+                "docs": [
+                    {"source_id": "DYN_REPORT_B1", "triggers": ["shikhandi", "bhutakarman", "skirmish"], "text": "[FIELD_REPORT] Shikhandi engaged Bhutakarman in a fierce duel near the center formation."},
+                    {"source_id": "DYN_OBS_B2", "triggers": ["bhutakarman", "bow", "arm", "strike"], "text": "[OBSERVATION] Bhutakarman's bow was the first to fall, snapped in half. Then a vicious strike caught his arm."},
+                    {"source_id": "DYN_MED_B3", "triggers": ["shikhandi", "head", "strike", "fatal"], "text": "[CORPSE_EXAMINATION] The fatal injury was a severe trauma to the head, delivered as the final strike."},
+                    {"source_id": "DYN_DEC_B4", "triggers": ["head", "bow", "first"], "text": "[CONFLICTING_ACCOUNT] A scribe noted the head was struck before the bow broke, but the timestamps are contested."}
+                ]
+            },
+            {
+                "aggressor": "Dhrishtadyumna",
+                "target": "Kritavarma",
+                "sequence": [
+                    {"aliases": ["dhrishtadyumna strike the chest", "strike chest", "strike the chest", "dhrishtadyumna strike kritavarma chest"]},
+                    {"aliases": ["dhrishtadyumna dismount", "dismount", "forced to dismount", "dhrishtadyumna force kritavarma dismount"]},
+                    {"aliases": ["dhrishtadyumna strike the neck", "strike neck", "strike the neck", "dhrishtadyumna strike kritavarma neck"]}
+                ],
+                "docs": [
+                    {"source_id": "DYN_REPORT_C1", "triggers": ["dhrishtadyumna", "kritavarma", "skirmish"], "text": "[TACTICAL_SUMMARY] Dhrishtadyumna clashed violently with Kritavarma."},
+                    {"source_id": "DYN_OBS_C2", "triggers": ["kritavarma", "chest", "dismount", "clash"], "text": "[EYEWITNESS] The initial clash resulted in a heavy strike to the chest. Following this, one of the warriors was forced to dismount."},
+                    {"source_id": "DYN_MED_C3", "triggers": ["dhrishtadyumna", "neck", "strike", "final"], "text": "[FINAL_MOMENTS] The skirmish ended with a swift strike to the neck after the dismount."},
+                    {"source_id": "DYN_DEC_C4", "triggers": ["dismount", "chest", "foot"], "text": "[RUMOR] I heard Kritavarma was never on foot during the engagement."}
+                ]
+            },
+            {
+                "aggressor": "Yudhamanyu",
+                "target": "Kripacharya",
+                "sequence": [
+                    {"aliases": ["yudhamanyu kill the charioteer", "kill charioteer", "kill the charioteer", "yudhamanyu kill kripacharya charioteer"]},
+                    {"aliases": ["yudhamanyu cut the bow", "cut bow", "cut the bow", "yudhamanyu cut kripacharya bow"]},
+                    {"aliases": ["yudhamanyu strike the chest", "strike chest", "strike the chest", "yudhamanyu strike kripacharya chest"]}
+                ],
+                "docs": [
+                    {"source_id": "DYN_REPORT_D1", "triggers": ["yudhamanyu", "kripacharya", "skirmish"], "text": "[FRONT_LINE_LOG] Yudhamanyu intercepted Kripacharya's advance."},
+                    {"source_id": "DYN_OBS_D2", "triggers": ["kripacharya", "charioteer", "bow", "move"], "text": "[CHARIOT_REPORT] The opening move was ruthless; the charioteer was killed instantly, followed by the severing of the bow."},
+                    {"source_id": "DYN_MED_D3", "triggers": ["yudhamanyu", "chest", "strike", "conclude"], "text": "[MEDICAL_TENT] Kripacharya suffered a massive impact to the chest to conclude the duel."},
+                    {"source_id": "DYN_DEC_D4", "triggers": ["bow", "charioteer", "first"], "text": "[DECOY] Some claim the bow was severed before the charioteer fell, but the dust obscured the view."}
+                ]
+            }
         ]
         
-        agg = aggressors[h % 4]
-        tgt = targets[(h // 4) % 4]
-        seq = seqs[(h // 16) % 4]
-        
-        events = []
-        for i, part in enumerate(seq):
-            events.append({
-                "id": f"STRIKE_{i}",
-                "aliases": [
-                    f"{agg} strike {tgt} {part}",
-                    f"{agg} strikes {tgt} {part}",
-                    f"strike {tgt} {part}"
-                ]
-            })
-        return events
+        return scenarios[hash_val % len(scenarios)]
+
+    def get_dynamic_story_b_sequence(self, session_state: dict) -> list:
+        return self.get_story_b_scenario(session_state)["sequence"]
 
     def evaluate_milestone(
         self, 
