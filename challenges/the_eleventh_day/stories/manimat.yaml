@@ -108,12 +108,10 @@ phase2:
     aliases:
     - leave the car
     - left the car
-    - jump from the car
-    - leaped from the car
-    - jumped from the car
-    - leap from the chariot
-    - leaped from the chariot
-    - jumped from the chariot
+    - descended from the chariot
+    - descended from his car
+    - abandoned his chariot
+    - abandoned the car
     - dismount
     - dismounted
   - id: SLAY_MANIMAT
@@ -126,9 +124,8 @@ phase2:
     - struck Manimat down
     - slew Manimat
   - id: WRECK_MANIMAT_CAR
-    display: wreck Manimat's car
+    display: destroy Manimat's car
     aliases:
-    - wreck manimat's car
     - destroy Manimat's car
     - destroyed Manimat's car
     - cut up Manimat's car
@@ -136,17 +133,16 @@ phase2:
     - destroyed his chariot
     - destroy the chariot
     - destroyed the chariot
-    - destroy his car
-    - destroyed his car
-    - wreck manimat car
-    - wrecked manimat car
-    - wreck
+    - shattered the chariot
+    - shattered his car
   - id: REMOUNT
-    display: remount
+    display: return to his car
     aliases:
     - return to own car
+    - returned to his car
     - mount his own car
-    - remount
+    - mounted his chariot
+    - ascended his car
   - id: TAKE_NEW_BOW
     display: take another bow
     aliases:
