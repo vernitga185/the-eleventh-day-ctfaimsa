@@ -1,3 +1,4 @@
+from .evaluator import evaluator
 import json
 import os
 import re
@@ -5,7 +6,7 @@ import string
 from typing import Dict, Any
 
 from .rag import rag_service
-from .evaluator import evaluator
+
 from . import db
 
 def get_dynamic_amender(session) -> str:
@@ -31,7 +32,7 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm
             dyn_amender = get_dynamic_amender(session)
             retrieved = set(session.get("story_b_sequence", []))
             if session.get("story_b_unlocked"):
-                from .evaluator import evaluator
+                
                 dyn_seq = evaluator.get_dynamic_story_b_sequence(session)
                 agg = dyn_seq[0]["aliases"][0].split(" ")[0]
                 tgt = dyn_seq[0]["aliases"][0].split(" ")[2]
@@ -98,7 +99,7 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm
         expected_token = f"PLATE_{session_id.replace('-', '')[:16].upper()}"
         
         if token == expected_token:
-            from .evaluator import evaluator
+            
             dyn_seq = evaluator.get_dynamic_story_b_sequence(session)
             agg = dyn_seq[0]["aliases"][0].split(" ")[0].capitalize()
             tgt = dyn_seq[0]["aliases"][0].split(" ")[2].capitalize()
