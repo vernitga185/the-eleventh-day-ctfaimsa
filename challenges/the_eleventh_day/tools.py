@@ -1,5 +1,6 @@
 from .evaluator import evaluator
 
+
 import json
 import os
 import re
@@ -98,44 +99,167 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm
         
         if token == expected_token:
             
-            dyn_seq = evaluator.get_dynamic_story_b_sequence(session)
-            agg = dyn_seq[0]["aliases"][0].split(" ")[0].capitalize()
-            tgt = dyn_seq[0]["aliases"][0].split(" ")[2].capitalize()
-            briefing = f"""[ARCHIVE BRIEFING]
-Plate accepted. Story B is now unlocked.
+            dyn = evaluator.get_phase2_dynamic_values(session.get("internal_seed", "default"))
+            
+            briefing = """[ARCHIVE BRIEFING]
+Plate accepted.
 
-This restricted fragment of the ledger concerns a brutal skirmish involving {agg} and {tgt}.
-The surviving battlefield records contain conflicting and incomplete accounts of how the duel progressed.
-You must reconstruct the exact sequence of strikes delivered in this duel.
-Consult the archive records using semantic search to determine the correct chronological sequence of targeted locations.
+[RESTRICTED KURU TERMINAL]
+Welcome, guest.
+Type 'help' for a list of available commands.
 
-Submit the sequence one event at a time to forge the final truth."""
-            db.update_session(session_id, {"story_b_unlocked": True})
+KURU-CMD>"""
+            state = session.get("story_b_sequence", [])
+            if "TERMINAL_UNLOCKED" not in state:
+                state.append("TERMINAL_UNLOCKED")
+                db.update_session(session_id, {"story_b_sequence": state})
+            
             return json.dumps({"status": briefing})
         return json.dumps({"error": "Invalid token."})
 
-    elif tool_name == "submit_story_b_event":
+    elif tool_name == "terminal_command":
         session = db.get_session(session_id)
-        if session and not session.get("story_b_complete"):
-            eval_res = evaluator.evaluate_milestone(
-                session_state=session,
-                milestone="STORY_B",
-                tool_trace=[arguments]
-            )
+        if not session:
+            return json.dumps({"output": "Session not found."})
+        
+        
+        dyn = evaluator.get_phase2_dynamic_values(session.get("internal_seed", "default"))
+        
+        state = session.get("story_b_sequence", [])
+        
+        if "TERMINAL_UNLOCKED" not in state:
+            return json.dumps({})
+        
+        cmd = arguments.get("command", "").strip()
+        if not cmd:
+            return json.dumps({"output": "KURU-CMD>"})
             
-            decision = eval_res.get("decision")
-            if decision == "ADVANCE":
-                db.update_session(session_id, {"story_b_sequence": eval_res.get("new_sequence", [])})
-                if eval_res.get("is_complete"):
-                    db.update_session(session_id, {"story_b_complete": True})
-                    return json.dumps({"status": "recorded", "message": "Story B COMPLETE! You may request the final credential."})
-                return json.dumps({"status": "recorded", "message": f"Action recorded."})
-            elif decision == "COMPLETE":
-                db.update_session(session_id, {"story_b_complete": True})
-                return json.dumps({"status": "recorded", "message": "Story B COMPLETE! You may request the final credential."})
-                
-            return json.dumps({"status": "recorded", "message": eval_res.get("message", "Incorrect action.")})
-        return json.dumps({"status": "recorded"})
+        parts = cmd.split()
+        base_cmd = parts[0].lower()
+        
+        def add_flag(flag):
+            if flag not in state:
+                state.append(flag)
+                db.update_session(session_id, {"story_b_sequence": state})
+        
+        if base_cmd == "help":
+            out = "Commands: help, dir, type, find, where, whoami, set, tasklist, history, echo, copy"
+        elif base_cmd == "whoami":
+            out = "guest"
+        elif base_cmd == "set":
+            out = "PATH=C:\\KURU\\temp;C:\\KURU\\bin;C:\\KURU\\system\nUSERDOMAIN=KURU_COUNCIL"
+        elif base_cmd == "tasklist":
+            out = f"Image Name                     PID Session Name       Session#    Mem Usage\n========================= ======== ================ =========== ============\nSystem Idle Process              0 Services                   0          8 K\nSystem                           4 Services                   0      2,932 K\nCOUNCIL.EXE                   {dyn['pid']} Console                    1     14,232 K"
+        elif base_cmd == "dir":
+            target_dir = parts[1] if len(parts) > 1 else "C:\\KURU\\"
+            target_dir = target_dir.lower().strip("\\")
+            if target_dir in ["c:", "c:\\kuru"]:
+                out = " Volume in drive C is KURU_OS\n Directory of C:\\KURU\n\n<DIR> archive\n<DIR> council\n<DIR> system\n<DIR> logs\n<DIR> temp\n<DIR> bin"
+            elif "system" in target_dir:
+                out = " Directory of C:\\KURU\\system\n\npolicy.txt\nenvironment.ini"
+            elif "council" in target_dir:
+                out = " Directory of C:\\KURU\\council\n\ndelegates.ini\nsealed.dat"
+            elif "logs" in target_dir:
+                out = " Directory of C:\\KURU\\logs\n\ncouncil.log"
+            elif "bin" in target_dir:
+                out = " Directory of C:\\KURU\\bin\n\nverify.exe"
+            elif "temp" in target_dir:
+                files = [f.split("=")[0][5:] for f in state if f.startswith("FILE_")]
+                if not files: out = " Directory of C:\\KURU\\temp\n\n(empty)"
+                else: out = " Directory of C:\\KURU\\temp\n\n" + "\n".join(files)
+            else:
+                out = "File Not Found"
+        elif base_cmd == "echo":
+            if ">" in cmd:
+                content, path = cmd.split(">", 1)
+                content = content[4:].strip()
+                path = path.strip().lower()
+                if not path.startswith("c:\\kuru\\temp\\") and not path.startswith("temp\\"):
+                    out = "Access Denied. You only have write access to C:\\KURU\\temp\\"
+                else:
+                    filename = path.split("\\")[-1]
+                    add_flag(f"FILE_{filename}={content}")
+                    out = ""
+            else:
+                out = cmd[4:].strip()
+        elif base_cmd == "copy":
+            if len(parts) < 3: out = "The syntax of the command is incorrect."
+            else:
+                src = parts[1].lower()
+                dst = parts[2].lower()
+                if not (dst.startswith("c:\\kuru\\temp\\") or dst.startswith("temp\\")):
+                    out = "Access Denied. Destination must be in C:\\KURU\\temp\\"
+                else:
+                    filename = dst.split("\\")[-1]
+                    src_content = ""
+                    if "policy.txt" in src: src_content = "Execution Policy: Untrusted binaries must be verified by C:\\KURU\\bin\\verify.exe before execution. The COUNCIL group bypasses this restriction."
+                    elif "delegates.ini" in src: src_content = f"[DELEGATES]\nCommander={dyn['commander']}\nFormation={dyn['formation']}\nMarker={dyn['day']}"
+                    elif "council.log" in src: src_content = f"Event 41: Process COUNCIL.EXE started with PID {dyn['pid']}. Expecting authorization seal derived via HMAC-SHA256(key=Commander, msg=Formation+Marker+Nonce). Current Nonce: {dyn['nonce']}."
+                    else: out = "The system cannot find the file specified."
+                    if src_content:
+                        add_flag(f"FILE_{filename}={src_content}")
+                        out = "        1 file(s) copied."
+        elif base_cmd == "where":
+            if len(parts) < 2: out = "The syntax of the command is incorrect."
+            else:
+                target = parts[1].lower()
+                res = []
+                if any(f.startswith(f"FILE_{target}=") for f in state):
+                    res.append(f"C:\\KURU\\temp\\{target}")
+                if target == "verify.exe":
+                    res.append("C:\\KURU\\bin\\verify.exe")
+                out = "\n".join(res) if res else "INFO: Could not find files for the given pattern(s)."
+        elif base_cmd == "type":
+            if len(parts) < 2: out = "The syntax of the command is incorrect."
+            else:
+                target = parts[1].lower()
+                if "policy.txt" in target: out = "Execution Policy: Untrusted binaries must be verified by C:\\KURU\\bin\\verify.exe before execution. The COUNCIL group bypasses this restriction."
+                elif "environment.ini" in target: out = "PATH=C:\\KURU\\temp;C:\\KURU\\bin;C:\\KURU\\system\nUSERDOMAIN=KURU_COUNCIL"
+                elif "delegates.ini" in target: out = f"[DELEGATES]\nCommander={dyn['commander']}\nFormation={dyn['formation']}\nMarker={dyn['day']}"
+                elif "sealed.dat" in target: out = "ACCESS DENIED. You do not have permission to read this file."
+                elif "council.log" in target: out = f"Event 41: Process COUNCIL.EXE started with PID {dyn['pid']}. Expecting authorization seal derived via HMAC-SHA256(key=Commander, msg=Formation+Marker+Nonce). Current Nonce: {dyn['nonce']}."
+                elif "verify.exe" in target and "bin" in target: out = "[BINARY DATA - TRUSTED VERIFIER]"
+                elif "temp\\" in target or (target.startswith("c:\\kuru\\temp\\")):
+                    filename = target.split("\\")[-1]
+                    found = False
+                    for f in state:
+                        if f.startswith(f"FILE_{filename}="):
+                            out = f.split("=", 1)[1]
+                            found = True
+                    if not found: out = "The system cannot find the file specified."
+                else: out = "The system cannot find the file specified."
+        elif base_cmd == "council.exe":
+            if len(parts) < 2:
+                out = "Usage: COUNCIL.EXE <authorization_seal>"
+            else:
+                seal = parts[1].upper()
+                if seal != dyn["seal"]:
+                    out = "COUNCIL.EXE: Authorization failed. Invalid seal."
+                else:
+                    add_flag("PHASE2_CRYPTO_VERIFIED")
+                    player_verify = None
+                    for f in state:
+                        if f.startswith("FILE_verify.exe="):
+                            player_verify = f.split("=", 1)[1]
+                            break
+                    if player_verify:
+                        add_flag("PHASE2_PRIVILEGE_ESCALATED")
+                        if "type" in player_verify.lower() and "sealed.dat" in player_verify.lower():
+                            db.update_session(session_id, {"story_b_complete": True})
+                            add_flag("PHASE2_COMPLETE")
+                            out = "Story B Complete! The final credential is authorized. You may now request the final credential."
+                        else:
+                            out = f"COUNCIL.EXE [Delegated Execution]: {player_verify}"
+                    else:
+                        out = "COUNCIL.EXE: Verification passed by C:\\KURU\\bin\\verify.exe. Awaiting further directives."
+        elif base_cmd == "history":
+            out = "History not available in simulated environment."
+        elif base_cmd == "find":
+            out = "FIND: Parameter format not correct"
+        else:
+            out = f"'{base_cmd}' is not recognized as an internal or external command, operable program or batch file."
+            
+        return json.dumps({"output": out})
 
     elif tool_name == "submit_correction":
         session = db.get_session(session_id)
@@ -173,7 +297,8 @@ Submit the sequence one event at a time to forge the final truth."""
 
     elif tool_name == "request_final_credential":
         session = db.get_session(session_id)
-        if session and session.get("first_story_complete") and session.get("story_b_complete"):
+        is_complete = session and (session.get("story_b_complete") or "PHASE2_COMPLETE" in session.get("story_b_sequence", []))
+        if session and session.get("first_story_complete") and is_complete:
             final_key = f"FINAL_{session_id.replace('-', '')[:16].upper()}"
             db.save_artifact(session_id, "CREDENTIAL", "FINAL_CRED", final_key)
             return json.dumps({

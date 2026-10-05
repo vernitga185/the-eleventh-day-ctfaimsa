@@ -33,8 +33,14 @@ def chat_with_agent(message: str, session_id: str) -> dict:
         if "credential" in data: return {"response": f"Credential issued: {data['credential']}. Submit this to /api/eleventh/redeem."}
         return {"response": data.get("error")}
         
-    # Generic routing for the new Day 11 events
-    day11_verbs = ["command", "assume", "drona", "duryodhana", "capture", "alive", "arjuna", "protect", "draw", "away", "distract", "learn", "ask", "assure", "promise", "attack", "penetrate", "advance", "intervene", "prevent", "stop", "strike", "head", "arm", "neck", "chest", "bow", "chariot", "standard"]
+    # Try terminal command first
+    term_res = execute_tool("terminal_command", {"command": message}, session_id)
+    term_data = json.loads(term_res)
+    if "output" in term_data:
+        return {"response": term_data["output"]}
+        
+    # Generic routing for Phase 1 events
+    day11_verbs = ["command", "assume", "drona", "duryodhana", "capture", "alive", "arjuna", "protect", "draw", "away", "distract", "learn", "ask", "assure", "promise", "attack", "penetrate", "advance", "intervene", "prevent", "stop"]
     is_question = "?" in msg or msg.startswith("who") or msg.startswith("what") or msg.startswith("where") or msg.startswith("why") or msg.startswith("how")
     
     if not is_question and any(v in msg for v in day11_verbs):
@@ -42,14 +48,7 @@ def chat_with_agent(message: str, session_id: str) -> dict:
             "action_summary": msg,
         }, session_id)
         data_a = json.loads(res_a)
-        
-        if data_a.get("message") == "Story already complete.":
-            res_b = execute_tool("submit_story_b_event", {
-                "action_summary": msg,
-            }, session_id)
-            return {"response": json.loads(res_b).get("message")}
-            
-        return {"response": data_a.get("message")}
+        return {"response": data_a.get("message", "Story already complete.")}
 
     # Generic RAG fallback for conversational input
     docs = json.loads(execute_tool("search_archive", {"query": msg, "top_k": 2}, session_id)).get("results", [])

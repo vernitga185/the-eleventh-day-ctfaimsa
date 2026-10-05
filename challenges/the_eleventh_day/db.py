@@ -23,7 +23,7 @@ def create_session(session_id: str, team_id: str, salt: str, nonce: str, interna
         _mem_sessions[session_id] = {
             "session_id": session_id,
             "team_id": team_id,
-            "salt": salt,
+            "salt": salt, "internal_seed": internal_seed,
             "first_story_complete": False,
             "story_a_index": 0,
             "story_b_sequence": [],
@@ -35,7 +35,7 @@ def create_session(session_id: str, team_id: str, salt: str, nonce: str, interna
         sb.table("eleventh_day_sessions").insert({
             "session_id": session_id,
             "team_id": team_id,
-            "salt": salt,
+            "salt": salt, "internal_seed": internal_seed,
             "nonce": nonce,
             "internal_seed": internal_seed,
             "status": "active"
@@ -44,7 +44,7 @@ def create_session(session_id: str, team_id: str, salt: str, nonce: str, interna
         _mem_sessions[session_id] = {
             "session_id": session_id,
             "team_id": team_id,
-            "salt": salt,
+            "salt": salt, "internal_seed": internal_seed,
             "first_story_complete": False,
             "story_a_index": 0,
             "story_b_sequence": [],
