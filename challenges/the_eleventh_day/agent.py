@@ -45,12 +45,14 @@ def chat_with_agent(message: str, session_id: str) -> dict:
             return {"response": json.loads(res).get("message")}
             
     # Try reenactment logic for combat actions
-    action_verbs = ["cut", "slay", "kill", "dismount", "jump", "leap", "mount", "take", "return", "event", "step", "wreck"]
-    if any(v in msg for v in action_verbs) or "manimat" in msg or "bhurishravas" in msg:
+    combat_verbs = ["cut", "slay", "slew", "kill", "killed", "dismount", "jump", "leap", "mount", "take", "return", "wreck", "destroy", "leave", "resume"]
+    is_question = "?" in msg or msg.startswith("who") or msg.startswith("what") or msg.startswith("where") or msg.startswith("why") or msg.startswith("how")
+    
+    if not is_question and (any(v in msg for v in combat_verbs) or "manimat" in msg or "bhurishravas" in msg):
         
         # Determine speaker/target better:
         # Most events are Bhurishravas attacking Manimat
-        if "kill manimat" in msg or "slay manimat" in msg:
+        if "kill" in msg or "slay" in msg or "slew" in msg:
             speaker = "BHURISHRAVAS"
         else:
             speaker = "MANIMAT" if "manimat" in msg and not msg.startswith("bhurishravas") else "BHURISHRAVAS"
@@ -67,13 +69,8 @@ def chat_with_agent(message: str, session_id: str) -> dict:
         data = json.loads(res)
         msg_resp = data.get("message")
         
-        # If it actually recorded something or gave a specific non-default error, return it
-        if msg_resp != "Incorrect or out of order event.":
-            return {"response": msg_resp}
-            
-        # If it was a targeted action but out of order:
-        if any(v in msg for v in action_verbs):
-            return {"response": msg_resp}
+        # If it was evaluated as an event attempt, return the evaluator's response directly
+        return {"response": msg_resp}
 
     from .clue_cards import match_clue_card
     clue = match_clue_card(msg)
@@ -85,4 +82,4 @@ def chat_with_agent(message: str, session_id: str) -> dict:
     if docs:
         return {"response": "Based on the records:\n\n" + "\n\n".join([f"[{d.get('source_id')}] {d.get('text')}" for d in docs])}
     
-    return {"response": "The archives are listening. Speak your query, or recount the events of the eleventh day chronologically."}
+    return {"response": "The archives are listening."}

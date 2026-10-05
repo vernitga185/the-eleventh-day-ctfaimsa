@@ -39,7 +39,7 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm
                 if eval_res.get("is_complete"):
                     db.update_session(session_id, {"first_story_complete": True})
                     return json.dumps({"status": "recorded", "eval": eval_res, "message": "Milestone COMPLETE! You may now request the plate."})
-                return json.dumps({"status": "recorded", "eval": eval_res, "message": f"Event {new_idx}/11 recorded."})
+                return json.dumps({"status": "recorded", "eval": eval_res, "message": f"Event recorded."})
                 
             elif decision == "COMPLETE":
                 db.update_session(session_id, {"first_story_complete": True})

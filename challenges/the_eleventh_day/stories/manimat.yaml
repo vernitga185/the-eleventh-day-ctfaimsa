@@ -106,21 +106,40 @@ phase2:
   - id: LEAVE_CAR
     display: leave the car
     aliases:
+    - leave the car
+    - left the car
     - jump from the car
+    - leaped from the car
+    - jumped from the car
     - leap from the chariot
+    - leaped from the chariot
+    - jumped from the chariot
     - dismount
+    - dismounted
   - id: SLAY_MANIMAT
     display: slay Manimat
     aliases:
+    - slay manimat
     - kill Manimat
+    - killed Manimat
     - strike Manimat down
+    - struck Manimat down
+    - slew Manimat
   - id: WRECK_MANIMAT_CAR
     display: wreck Manimat's car
     aliases:
+    - wreck manimat's car
     - destroy Manimat's car
+    - destroyed Manimat's car
     - cut up Manimat's car
     - destroy his chariot
+    - destroyed his chariot
+    - destroy the chariot
+    - destroyed the chariot
+    - destroy his car
+    - destroyed his car
     - wreck manimat car
+    - wrecked manimat car
     - wreck
   - id: REMOUNT
     display: remount
@@ -133,9 +152,11 @@ phase2:
     aliases:
     - take up another bow
     - take a new bow
+    - take another bow
   - id: RESUME_BATTLE
     display: resume battle
     aliases:
+    - resume battle
     - return to battle
     - continue fighting
     - devastate the Pandava host
