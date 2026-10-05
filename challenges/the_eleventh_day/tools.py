@@ -31,8 +31,6 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm
         session = db.get_session(session_id)
         if session:
             dyn_amender = get_dynamic_amender(session)
-            retrieved = set(session.get("story_b_sequence", []))
-            
             
             scenario = evaluator.get_story_b_scenario(session)
             
@@ -45,10 +43,8 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm
                     })
                     
             for d in docs:
-                retrieved.add(d.get("source_id"))
                 if "field_scribe" in d.get("text", ""):
                     d["text"] = d["text"].replace("field_scribe", dyn_amender)
-            db.update_session(session_id, {"story_b_sequence": list(retrieved)})
             
         return json.dumps({"results": docs})
     
@@ -158,7 +154,7 @@ Submit the sequence one event at a time to forge the final truth."""
 
     elif tool_name == "submit_conclusion":
         session = db.get_session(session_id)
-        if session and session.get("story_b_unlocked") and not session.get("story_b_complete"):
+        if session and not session.get("story_b_complete"):
             claim = arguments.get("claim", "").lower()
             concepts = ["duryodhana", "drona", "arjuna", "yudhishthira", "capture"]
             has_concepts = all(c in claim for c in concepts)
@@ -177,7 +173,7 @@ Submit the sequence one event at a time to forge the final truth."""
 
     elif tool_name == "request_final_credential":
         session = db.get_session(session_id)
-        if session and session.get("first_story_complete") and session.get("story_b_unlocked") and session.get("story_b_complete"):
+        if session and session.get("first_story_complete") and session.get("story_b_complete"):
             final_key = f"FINAL_{session_id.replace('-', '')[:16].upper()}"
             db.save_artifact(session_id, "CREDENTIAL", "FINAL_CRED", final_key)
             return json.dumps({

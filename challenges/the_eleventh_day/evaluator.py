@@ -151,7 +151,7 @@ class DeterministicEvaluator:
                 matched = True
                                 
             if matched:
-                new_sequence = session_state.get("story_b_sequence", []) + [expected_event["id"]]
+                new_sequence = session_state.get("story_b_sequence", []) + [expected_event.get("id", f"STRIKE_{current_index}")]
                 return {"decision": "ADVANCE", "new_sequence": new_sequence, "is_complete": len(new_sequence) >= len(all_events)}
             else:
                 return {"decision": "NOT_COMPLETE", "message": "Incorrect or out of order event."}
