@@ -42,7 +42,7 @@ export default function EleventhDayPage() {
         try {
           const res = await fetch(`/api/eleventh/init`, {
             method: 'POST',
-            headers: { 'X-Team-Id': 'TEAM_GUEST' }
+            headers: { 'X-Team-Id': 'TEAM_GUEST' }, cache: 'no-store'
           })
           if (res.ok) {
             const data = await res.json()
