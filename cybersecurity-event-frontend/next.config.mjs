@@ -9,8 +9,12 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL + '/api/:path*' : 'http://localhost:8000/api/:path*',
+        source: '/api/eleventh/:path*',
+        destination: 'https://backend-the-eleventh-day-ctfaimsa.onrender.com/api/eleventh/:path*',
+      },
+      {
+        source: '/api/satyajit/:path*',
+        destination: 'https://satyajit-of-panchala.onrender.com/api/satyajit/:path*',
       },
     ]
   },
