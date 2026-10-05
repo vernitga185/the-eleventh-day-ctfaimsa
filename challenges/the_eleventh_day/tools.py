@@ -30,6 +30,17 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm
         if session:
             dyn_amender = get_dynamic_amender(session)
             retrieved = set(session.get("story_b_sequence", []))
+            if session.get("story_b_unlocked"):
+                from .evaluator import evaluator
+                dyn_seq = evaluator.get_dynamic_story_b_sequence(session)
+                agg = dyn_seq[0]["aliases"][0].split(" ")[0]
+                tgt = dyn_seq[0]["aliases"][0].split(" ")[2]
+                parts = [ev["aliases"][0].split(" ")[-1] for ev in dyn_seq]
+                q = query.lower()
+                if agg in q or tgt in q or "strike" in q or "skirmish" in q or "conflict" in q or "record" in q:
+                    docs.append({"source_id": "DYN_REPORT_1", "text": f"[FIELD_REPORT] During the skirmish, {agg} launched a vicious attack against {tgt}."})
+                    docs.append({"source_id": "DYN_OBSERVATION_2", "text": f"[OBSERVATION] Eyewitnesses claim {agg} struck {tgt}'s {parts[0]} first, then targeted the {parts[1]}, and finally the {parts[2]}."})
+                    docs.append({"source_id": "DYN_DECOY_3", "text": f"[OBSERVATION_CONTRADICTION] Other records insist {tgt} deflected the initial blow entirely."})
             for d in docs:
                 retrieved.add(d.get("source_id"))
                 if "field_scribe" in d.get("text", ""):
@@ -87,8 +98,21 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any], session_id: str, llm
         expected_token = f"PLATE_{session_id.replace('-', '')[:16].upper()}"
         
         if token == expected_token:
+            from .evaluator import evaluator
+            dyn_seq = evaluator.get_dynamic_story_b_sequence(session)
+            agg = dyn_seq[0]["aliases"][0].split(" ")[0].capitalize()
+            tgt = dyn_seq[0]["aliases"][0].split(" ")[2].capitalize()
+            briefing = f"""[ARCHIVE BRIEFING]
+Plate accepted. Story B is now unlocked.
+
+This restricted fragment of the ledger concerns a brutal skirmish involving {agg} and {tgt}.
+The surviving battlefield records contain conflicting and incomplete accounts of how the duel progressed.
+You must reconstruct the exact sequence of strikes delivered in this duel.
+Consult the archive records using semantic search to determine the correct chronological sequence of targeted locations.
+
+Submit the sequence one event at a time to forge the final truth."""
             db.update_session(session_id, {"story_b_unlocked": True})
-            return json.dumps({"status": "Story B unlocked. You may submit events."})
+            return json.dumps({"status": briefing})
         return json.dumps({"error": "Invalid token."})
 
     elif tool_name == "submit_story_b_event":

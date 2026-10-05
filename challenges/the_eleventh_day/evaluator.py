@@ -30,6 +30,36 @@ class DeterministicEvaluator:
                 matches += 1
         return matches > 1
         
+    def get_dynamic_story_b_sequence(self, session_state: dict) -> list:
+        import hashlib
+        seed = session_state.get("internal_seed", "default")
+        h = int(hashlib.md5(seed.encode()).hexdigest(), 16)
+        
+        aggressors = ["satanika", "dhrishtadyumna", "shikhandi", "yudhamanyu"]
+        targets = ["bhutakarman", "ashwatthama", "kritavarma", "kripacharya"]
+        seqs = [
+            ["bow", "arm", "head"],
+            ["arm", "arm", "head"],
+            ["standard", "bow", "neck"],
+            ["chariot", "arm", "chest"]
+        ]
+        
+        agg = aggressors[h % 4]
+        tgt = targets[(h // 4) % 4]
+        seq = seqs[(h // 16) % 4]
+        
+        events = []
+        for i, part in enumerate(seq):
+            events.append({
+                "id": f"STRIKE_{i}",
+                "aliases": [
+                    f"{agg} strike {tgt} {part}",
+                    f"{agg} strikes {tgt} {part}",
+                    f"strike {tgt} {part}"
+                ]
+            })
+        return events
+
     def evaluate_milestone(
         self, 
         session_state: dict,
@@ -63,7 +93,7 @@ class DeterministicEvaluator:
                 
         elif milestone == "STORY_B":
             current_index = len(session_state.get("story_b_sequence", []))
-            all_events = self.phase2_events
+            all_events = self.get_dynamic_story_b_sequence(session_state)
             
             if current_index >= len(all_events):
                 return {"decision": "COMPLETE"}
