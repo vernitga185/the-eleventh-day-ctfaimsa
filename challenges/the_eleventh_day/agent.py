@@ -17,7 +17,7 @@ def chat_with_agent(message: str, session_id: str) -> dict:
     if "plate" in msg and ("get" in msg or "request" in msg or "give" in msg):
         res = execute_tool("request_plate", {}, session_id)
         data = json.loads(res)
-        if "plate_token" in data: return {"response": f"{data.get('message')} Identity Plate: {data['plate_token']}"}
+        if "plate_token" in data: return {"response": data.get("message", f"Identity Plate: {data['plate_token']}")}
         return {"response": data.get("error") or data.get("message")}
         
     if "story b" in msg or "open" in msg and "plate_" in msg:

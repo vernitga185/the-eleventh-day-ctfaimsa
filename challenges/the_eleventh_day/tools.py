@@ -85,7 +85,11 @@ def execute_tool(tool_name: str, arguments: dict, session_id: str) -> str:
         if session:
             new_idx = session.get("story_a_index", 0) + 1
             updates = {"story_a_index": new_idx}
-            if new_idx >= 6:
+            if new_idx == 6:
+                updates["first_story_complete"] = True
+                db.update_session(session_id, updates)
+                return json.dumps({"status": "recorded", "message": "Milestone COMPLETE!\n\nThe morning's record is complete.\nWhat was earned that day was not merely a record, but a mark of passage.\nThe archive keeps such things for those who ask."})
+            if new_idx > 6:
                 updates["first_story_complete"] = True
             db.update_session(session_id, updates)
         return json.dumps({"status": "recorded", "message": "Event recorded."})
@@ -102,7 +106,8 @@ def execute_tool(tool_name: str, arguments: dict, session_id: str) -> str:
         session = db.get_session(session_id)
         if session and session.get("first_story_complete"):
             plate = f"PLATE_{session_id.replace('-', '').upper()[:16]}"
-            return json.dumps({"status": "success", "plate_token": plate})
+            msg = f"Identity Plate:\n{plate}\n\nThe mark is accepted.\nSome records do not open to names alone.\nA restricted account of the day awaits those who present the proper mark."
+            return json.dumps({"status": "success", "plate_token": plate, "message": msg})
         return json.dumps({"error": "Phase 1 incomplete."})
         
     elif tool_name == "unlock_story_b":
@@ -121,7 +126,7 @@ def execute_tool(tool_name: str, arguments: dict, session_id: str) -> str:
             
             return json.dumps({
                 "status": "success",
-                "message": "[RESTRICTED KURU TERMINAL]\nWelcome, guest.\nType 'help' for a list of available commands.\n\nKURU-CMD>"
+                "message": "Identity plate accepted.\n\n[RESTRICTED KURU TERMINAL]\nWelcome, warrior.\nType 'help' for available commands.\n\nKURU-CMD>"
             })
         return json.dumps({"error": "Invalid plate token."})
         
