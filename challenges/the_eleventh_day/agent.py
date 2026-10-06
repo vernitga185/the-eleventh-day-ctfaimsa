@@ -14,7 +14,7 @@ def chat_with_agent(message: str, session_id: str) -> dict:
         if docs: return {"response": "Archive matches:\n\n" + "\n\n".join([f"[{d.get('source_id')}] {d.get('text')}" for d in docs])}
         return {"response": "Archive silence."}
         
-    if "plate" in msg and ("get" in msg or "request" in msg or "give" in msg):
+    if "archive" in msg and ("get" in msg or "request" in msg or "give" in msg or "access" in msg or "ask" in msg):
         res = execute_tool("request_plate", {}, session_id)
         data = json.loads(res)
         if "plate_token" in data: return {"response": data.get("message", f"Identity Plate: {data['plate_token']}")}
