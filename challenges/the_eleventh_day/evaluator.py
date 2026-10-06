@@ -35,23 +35,49 @@ class DeterministicEvaluator:
         import hmac
         h = int(hashlib.md5(seed.encode()).hexdigest(), 16)
         
-        commanders = ["DRONA", "ASHWATTHAMA", "KRIPA", "SHALYA"]
-        formations = ["CHAKRAVYUHA", "KRAUNCHA", "PADMA", "GARUDA"]
-        day_markers = ["DAY_11", "DAY_12", "DAY_13", "DAY_14"]
+        commanders = ["DRONA", "KRIPA", "ASHWATTHAMA", "SHALYA"]
+        formations = ["CHAKRAVYUHA", "KRAUNCHA", "GARUDA", "PADMA"]
+        markers = ["DAY_11", "DAY_12", "DAY_13", "DAY_14"]
         
         commander = commanders[h % 4]
         formation = formations[(h // 4) % 4]
-        day = day_markers[(h // 16) % 4]
-        nonce = hashlib.md5(f"{seed}_nonce".encode()).hexdigest()[:8].upper()
+        marker = markers[(h // 16) % 4]
+        nonce_val = (h // 64) % 0xFFFFFFFF
+        nonce = f"{nonce_val:08X}"
         pid = 1000 + (h % 9000)
         
-        msg = f"{formation}{day}{nonce}".encode()
-        seal = hmac.new(commander.encode(), msg, hashlib.sha256).hexdigest().upper()
-        
+        scenario_id = (h % 6) + 1
+
+        seal = ""
+        if scenario_id == 1:
+            key = commander.encode()
+            msg = (formation + marker + nonce).encode()
+            seal = hmac.new(key, msg, hashlib.sha256).hexdigest().upper()
+        elif scenario_id == 2:
+            key = formation.encode()
+            msg = (commander + marker + nonce).encode()
+            seal = hmac.new(key, msg, hashlib.sha256).hexdigest().upper()
+        elif scenario_id == 3:
+            key = marker.encode()
+            msg = (commander + formation + nonce).encode()
+            seal = hmac.new(key, msg, hashlib.sha256).hexdigest().upper()
+        elif scenario_id == 4:
+            msg = (commander + formation + marker + nonce).encode()
+            seal = hashlib.sha256(msg).hexdigest().upper()
+        elif scenario_id == 5:
+            key = (commander + marker).encode()
+            msg = (formation + nonce).encode()
+            seal = hmac.new(key, msg, hashlib.sha256).hexdigest().upper()
+        elif scenario_id == 6:
+            key = (formation + marker).encode()
+            msg = (commander + nonce).encode()
+            seal = hmac.new(key, msg, hashlib.sha256).hexdigest().upper()
+
         return {
+            "scenario_id": scenario_id,
             "commander": commander,
             "formation": formation,
-            "day": day,
+            "marker": marker,
             "nonce": nonce,
             "pid": pid,
             "seal": seal
