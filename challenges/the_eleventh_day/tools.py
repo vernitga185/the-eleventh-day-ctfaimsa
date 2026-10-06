@@ -126,7 +126,7 @@ def execute_tool(tool_name: str, arguments: dict, session_id: str) -> str:
             
             return json.dumps({
                 "status": "success",
-                "message": "Identity plate accepted.\n\n[RESTRICTED KURU TERMINAL]\nWelcome, warrior.\nType 'help' for available commands.\n\nKURU-CMD>"
+                "message": "Identity plate accepted.\n\n[RESTRICTED KURU TERMINAL]\nWelcome, guest.\nType 'help' for a list of available commands.\n\nKURU-CMD>"
             })
         return json.dumps({"error": "Invalid plate token."})
         

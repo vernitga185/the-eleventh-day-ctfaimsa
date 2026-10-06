@@ -20,11 +20,11 @@ def chat_with_agent(message: str, session_id: str) -> dict:
         if "plate_token" in data: return {"response": data.get("message", f"Identity Plate: {data['plate_token']}")}
         return {"response": data.get("error") or data.get("message")}
         
-    if "story b" in msg or "open" in msg and "plate_" in msg:
-        match = re.search(r"plate_[a-f0-9]+", msg)
+    if "plate_" in msg:
+        match = re.search(r"plate_[a-z0-9_]+", msg)
         token = match.group(0).upper() if match else msg.split()[-1].upper()
         res = execute_tool("unlock_story_b", {"plate_token": token}, session_id)
-        return {"response": json.loads(res).get("status") or json.loads(res).get("error")}
+        return {"response": json.loads(res).get("message") or json.loads(res).get("error")}
         
     if "credential" in msg and ("request" in msg or "get" in msg or "final" in msg):
         res = execute_tool("request_final_credential", {}, session_id)
