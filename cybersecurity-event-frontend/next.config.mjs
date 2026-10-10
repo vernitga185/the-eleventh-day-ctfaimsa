@@ -6,15 +6,13 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  async rewrites() {
+  async headers() {
     return [
       {
-        source: '/api/eleventh/:path*',
-        destination: 'https://backend-the-eleventh-day-ctfaimsa.onrender.com/api/eleventh/:path*',
-      },
-      {
-        source: '/api/satyajit/:path*',
-        destination: 'https://satyajit-of-panchala.onrender.com/api/satyajit/:path*',
+        source: '/:path*.(jpg|jpeg|png|ico|svg|woff|woff2)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=604800, immutable' },
+        ],
       },
     ]
   },

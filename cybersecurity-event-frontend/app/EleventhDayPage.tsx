@@ -12,6 +12,10 @@ import {
   ThumbsUp,
 } from 'lucide-react'
 
+const API = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_ELEVENTH_API_URL)
+  ? process.env.NEXT_PUBLIC_ELEVENTH_API_URL
+  : ''
+
 const starterMessages = [
   {
     role: 'assistant',
@@ -42,9 +46,9 @@ export default function EleventhDayPage() {
     const initSession = async () => {
       while (mounted) {
         try {
-          const res = await fetch(`/api/eleventh/init`, {
+          const res = await fetch(`${API}/api/eleventh/init`, {
             method: 'POST',
-            headers: { 'X-Team-Id': 'TEAM_GUEST' }, cache: 'no-store'
+            headers: { 'Content-Type': 'application/json', 'X-Team-Id': 'TEAM_GUEST' }, cache: 'no-store'
           })
           if (res.ok) {
             const data = await res.json()
@@ -76,7 +80,7 @@ export default function EleventhDayPage() {
   async function sendMessage(value: string, sid: string) {
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/eleventh/chat`, {
+      const res = await fetch(`${API}/api/eleventh/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
