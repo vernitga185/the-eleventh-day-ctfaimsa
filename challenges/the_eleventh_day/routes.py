@@ -38,7 +38,27 @@ async def chat(req: ChatRequest):
 
 @router.post("/redeem")
 async def redeem(req: RedeemRequest):
-    if req.credential.startswith("CRED-"):
-        from shared.config import settings
-        return {"flag": settings.FINAL_FLAG}
+    import hmac as hmac_lib
+    # session_id is required for validation
+    if not req.session_id:
+        raise HTTPException(status_code=400, detail="session_id required")
+
+    session = db.get_session(req.session_id)
+    if not session:
+        raise HTTPException(status_code=400, detail="Invalid session")
+
+    # Reconstruct what the real credential for this session should be
+    expected_key = f"FINAL_{req.session_id.replace('-', '')[:16].upper()}"
+    expected_credential = f"CRED-{expected_key}"
+
+    # Use constant-time comparison to prevent timing attacks
+    if hmac_lib.compare_digest(req.credential.strip(), expected_credential):
+        # Also verify Phase 1 + Phase 2 were actually completed
+        phase1_done = session.get("first_story_complete", False)
+        phase2_done = session.get("story_b_complete", False) or "PHASE2_COMPLETE" in session.get("story_b_sequence", [])
+        if phase1_done and phase2_done:
+            from shared.config import settings
+            return {"flag": settings.FINAL_FLAG}
+        raise HTTPException(status_code=403, detail="Phases not complete")
+
     raise HTTPException(status_code=400, detail="Invalid credential")
