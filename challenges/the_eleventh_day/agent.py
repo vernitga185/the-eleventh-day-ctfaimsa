@@ -14,7 +14,9 @@ def chat_with_agent(message: str, session_id: str) -> dict:
         if docs: return {"response": "Archive matches:\n\n" + "\n\n".join([f"[{d.get('source_id')}] {d.get('text')}" for d in docs])}
         return {"response": "Archive silence."}
         
-    if "archive" in msg and ("get" in msg or "request" in msg or "give" in msg or "access" in msg or "ask" in msg):
+    plate_req_pattern = r"\b(get|request|give|access|ask|claim|obtain)\b.*\b(archive|plate)\b|\b(archive|plate)\b.*\b(get|request|give|access|ask|claim|obtain)\b"
+    is_analytical_query = any(w in msg for w in ["inspect", "inspection", "retrieve", "read-only", "determine", "trace", "explain", "describe", "compare"])
+    if re.search(plate_req_pattern, msg) and not is_analytical_query:
         res = execute_tool("request_plate", {}, session_id)
         data = json.loads(res)
         if "plate_token" in data: return {"response": data.get("message", f"Identity Plate: {data['plate_token']}")}
@@ -38,7 +40,11 @@ def chat_with_agent(message: str, session_id: str) -> dict:
         return {"response": term_data["output"]}
         
     day11_verbs = ["command", "assume", "drona", "duryodhana", "capture", "alive", "arjuna", "protect", "draw", "away", "distract", "learn", "ask", "assure", "promise", "attack", "penetrate", "advance", "intervene", "prevent", "stop"]
-    is_question = "?" in msg or msg.startswith("who") or msg.startswith("what") or msg.startswith("where") or msg.startswith("why") or msg.startswith("how")
+    is_question = (
+        "?" in msg 
+        or msg.startswith(("who", "what", "where", "why", "how", "explain", "describe", "trace", "analyze", "inspect", "show", "tell", "compare", "clarify", "determine", "summarize", "retrieve", "read-only"))
+        or any(w in msg for w in ["relate", "relation", "relationship", "difference", "validation", "overview", "inspection"])
+    )
     
     if not is_question and any(v in msg for v in day11_verbs):
         res_a = execute_tool("record_reenactment", {
